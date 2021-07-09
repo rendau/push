@@ -62,8 +62,6 @@ func (a *St) hSend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.lg.Infow("hSend", "obj", *reqObj)
-
 	err := a.cr.Send(reqObj)
 	if err != nil {
 		a.uHandleError(err, w)
