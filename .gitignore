@@ -6,3 +6,4 @@
 release/*
 conf.yml
 /svc
+.migrate_scripts

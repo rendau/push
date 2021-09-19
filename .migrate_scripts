@@ -1,6 +1,0 @@
-migrate -path migrations -database "postgres://user:Isupercater@jn:3254/push" up
-
-migrate -path migrations -database "postgres://localhost:5432/catp_push?sslmode=disable" up
-migrate -path migrations -database "postgres://localhost:5432/catp_push_test?sslmode=disable" up
-
-migrate create -ext sql -dir migrations init
