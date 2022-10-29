@@ -14,6 +14,7 @@ var conf = struct {
 	SwagBasePath string `mapstructure:"SWAG_BASE_PATH"`
 	SwagSchema   string `mapstructure:"SWAG_SCHEMA"`
 	PgDsn        string `mapstructure:"PG_DSN"`
+	FcmCredsPath string `mapstructure:"FCM_CREDS_PATH"`
 }{}
 
 func confLoad() {

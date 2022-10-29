@@ -9,6 +9,8 @@ import (
 	dopServerHttps "github.com/rendau/dop/adapters/server/https"
 	"github.com/rendau/dop/dopTools"
 	"github.com/rendau/push/docs"
+	"github.com/rendau/push/internal/adapters/prv"
+	"github.com/rendau/push/internal/adapters/prv/fcm"
 	"github.com/rendau/push/internal/adapters/repo/pg"
 	"github.com/rendau/push/internal/adapters/server/rest"
 	"github.com/rendau/push/internal/domain/core"
@@ -21,6 +23,7 @@ func Execute() {
 		lg         *dopLoggerZap.St
 		db         *dopDbPg.St
 		repo       *pg.St
+		prv        prv.Prv
 		core       *core.St
 		restApi    *rest.St
 		restApiSrv *dopServerHttps.St
@@ -39,7 +42,24 @@ func Execute() {
 
 	app.repo = pg.New(app.db, app.lg)
 
-	app.core = core.New(app.lg, app.repo)
+	app.prv, err = fcm.New(app.lg, conf.FcmCredsPath)
+
+	err = app.prv.Send(&prv.SendReqSt{
+		Tokens: []string{"asdfasdfads"},
+		Title:  "Hello",
+		Body:   "world!",
+		Data: map[string]string{
+			"score": "850",
+			"time":  "2:45",
+		},
+		Badge:      2,
+		AndroidTag: "",
+	})
+	if err != nil {
+		app.lg.Fatal(err)
+	}
+
+	app.core = core.New(app.lg, app.repo, app.prv)
 
 	docs.SwaggerInfo.Host = conf.SwagHost
 	docs.SwaggerInfo.BasePath = conf.SwagBasePath
