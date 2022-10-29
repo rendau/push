@@ -3,6 +3,7 @@ package fcm
 import (
 	"context"
 	"fmt"
+	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
@@ -68,8 +69,91 @@ func (o *St) Send(obj *prv.SendReqSt) error {
 	*/
 
 	message := &messaging.MulticastMessage{
-		Data:   obj.Data,
 		Tokens: obj.Tokens,
+		Data:   obj.Data,
+		Notification: &messaging.Notification{
+			Title: obj.Title,
+			Body:  obj.Body,
+		},
+		Android: &messaging.AndroidConfig{
+			CollapseKey:           "",
+			Priority:              "",
+			TTL:                   nil,
+			RestrictedPackageName: "",
+			Data:                  nil,
+			Notification: &messaging.AndroidNotification{
+				Title:                 "",
+				Body:                  "",
+				Icon:                  "",
+				Color:                 "",
+				Sound:                 "",
+				Tag:                   "",
+				ClickAction:           "",
+				BodyLocKey:            "",
+				BodyLocArgs:           nil,
+				TitleLocKey:           "",
+				TitleLocArgs:          nil,
+				ChannelID:             "",
+				ImageURL:              "",
+				Ticker:                "",
+				Sticky:                false,
+				EventTimestamp:        &time.Time{},
+				LocalOnly:             false,
+				Priority:              0,
+				VibrateTimingMillis:   nil,
+				DefaultVibrateTimings: false,
+				DefaultSound:          false,
+				LightSettings: &messaging.LightSettings{
+					Color:                  "",
+					LightOnDurationMillis:  0,
+					LightOffDurationMillis: 0,
+				},
+				DefaultLightSettings: false,
+				Visibility:           0,
+				NotificationCount:    nil,
+			},
+			FCMOptions: &messaging.AndroidFCMOptions{
+				AnalyticsLabel: "",
+			},
+		},
+		APNS: &messaging.APNSConfig{
+			Headers: nil,
+			Payload: &messaging.APNSPayload{
+				Aps: &messaging.Aps{
+					AlertString: "",
+					Alert: &messaging.ApsAlert{
+						Title:           "",
+						SubTitle:        "",
+						Body:            "",
+						LocKey:          "",
+						LocArgs:         nil,
+						TitleLocKey:     "",
+						TitleLocArgs:    nil,
+						SubTitleLocKey:  "",
+						SubTitleLocArgs: nil,
+						ActionLocKey:    "",
+						LaunchImage:     "",
+					},
+					Badge: nil,
+					Sound: "",
+					CriticalSound: &messaging.CriticalSound{
+						Critical: false,
+						Name:     "",
+						Volume:   0,
+					},
+					ContentAvailable: false,
+					MutableContent:   false,
+					Category:         "",
+					ThreadID:         "",
+					CustomData:       nil,
+				},
+				CustomData: nil,
+			},
+			FCMOptions: &messaging.APNSFCMOptions{
+				AnalyticsLabel: "",
+				ImageURL:       "",
+			},
+		},
 	}
 
 	respObj, err := o.client.SendMulticast(context.Background(), message)
