@@ -1,10 +1,5 @@
 package entities
 
-type Session struct {
-	Id    int64 `json:"id"`
-	Error error `json:"error"`
-}
-
 type SendReqSt struct {
 	UsrIds     []int64           `json:"usr_ids"`
 	Title      string            `json:"title"`

@@ -1,0 +1,87 @@
+definitions:
+  dopTypes.CreateRep:
+    properties:
+      id: {}
+    type: object
+  dopTypes.ErrRep:
+    properties:
+      desc:
+        type: string
+      error_code:
+        type: string
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  entities.TokenCUSt:
+    properties:
+      platform_id:
+        type: integer
+      usr_id:
+        type: integer
+      value:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /token:
+    post:
+      parameters:
+      - description: body
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/entities.TokenCUSt'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dopTypes.CreateRep'
+            - properties:
+                id:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dopTypes.ErrRep'
+      tags:
+      - token
+  /token/:value:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: value
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dopTypes.ErrRep'
+      tags:
+      - token
+  /usr/:id/token:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: value
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dopTypes.ErrRep'
+      tags:
+      - usr
+swagger: "2.0"

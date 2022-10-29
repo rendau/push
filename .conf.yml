@@ -1,6 +1,5 @@
 debug: false
 log_level: "info"
 http_listen: ":80"
-fcm_server_key: "key"
-usr_auth_url: "url for auth"
-pg_dsn: "postgres://postgres:your-password@domen/table_name"
+GOOGLE_APPLICATION_CREDENTIALS: "./res/fcm_key.json"
+pg_dsn: "postgres://postgres:your-password@domen/db_name"

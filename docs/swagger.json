@@ -1,0 +1,144 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/token": {
+            "post": {
+                "tags": [
+                    "token"
+                ],
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/entities.TokenCUSt"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dopTypes.CreateRep"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dopTypes.ErrRep"
+                        }
+                    }
+                }
+            }
+        },
+        "/token/:value": {
+            "delete": {
+                "tags": [
+                    "token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dopTypes.ErrRep"
+                        }
+                    }
+                }
+            }
+        },
+        "/usr/:id/token": {
+            "delete": {
+                "tags": [
+                    "usr"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dopTypes.ErrRep"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dopTypes.CreateRep": {
+            "type": "object",
+            "properties": {
+                "id": {}
+            }
+        },
+        "dopTypes.ErrRep": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "error_code": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "entities.TokenCUSt": {
+            "type": "object",
+            "properties": {
+                "platform_id": {
+                    "type": "integer"
+                },
+                "usr_id": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

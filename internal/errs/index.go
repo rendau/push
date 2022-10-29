@@ -1,16 +1,13 @@
 package errs
 
-type Err string
-
-func (e Err) Error() string {
-	return string(e)
-}
+import (
+	"github.com/rendau/dop/dopErrs"
+)
 
 const (
-	ServerNA           = Err("server_not_available")
-	BadToken           = Err("bad_token")
-	NotCorrectPlatform = Err("not_correct_platform")
-	BadUserIds         = Err("bad_usr_ids")
-	NotAuthorized      = Err("not_authorized")
-	JSONParseErr       = Err("json_parse_err")
+	PlatformRequired   = dopErrs.Err("platform_required")
+	BadPlatform        = dopErrs.Err("bad_platform")
+	TokenValueRequired = dopErrs.Err("token_value_required")
+	BadTokenValue      = dopErrs.Err("bad_token_value")
+	UsrIdRequired      = dopErrs.Err("usr_id_required")
 )

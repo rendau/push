@@ -1,87 +1,82 @@
 package cmd
 
 import (
-	"context"
-	"log"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
-	"github.com/rendau/push/internal/adapters/db/pg"
-	"github.com/rendau/push/internal/adapters/httpapi"
-	"github.com/rendau/push/internal/adapters/logger/zap"
+	dopDbPg "github.com/rendau/dop/adapters/db/pg"
+	dopLoggerZap "github.com/rendau/dop/adapters/logger/zap"
+	dopServerHttps "github.com/rendau/dop/adapters/server/https"
+	"github.com/rendau/dop/dopTools"
+	"github.com/rendau/push/docs"
+	"github.com/rendau/push/internal/adapters/repo/pg"
+	"github.com/rendau/push/internal/adapters/server/rest"
 	"github.com/rendau/push/internal/domain/core"
-	"github.com/rendau/push/internal/interfaces"
-	"github.com/spf13/viper"
 )
 
 func Execute() {
 	var err error
 
 	app := struct {
-		lg      interfaces.Logger
-		db      interfaces.Db
-		core    *core.St
-		httpApi *httpapi.St
+		lg         *dopLoggerZap.St
+		db         *dopDbPg.St
+		repo       *pg.St
+		core       *core.St
+		restApi    *rest.St
+		restApiSrv *dopServerHttps.St
 	}{}
 
-	loadConf()
+	confLoad()
 
-	app.lg, err = zap.NewLogger(viper.GetString("log_level"), viper.GetBool("debug"), false)
-	if err != nil {
-		log.Fatal(err)
-	}
+	app.lg = dopLoggerZap.New(conf.LogLevel, conf.Debug)
 
-	app.db, err = pg.New(app.lg, viper.GetString("pg_dsn"))
+	app.db, err = dopDbPg.New(conf.Debug, app.lg, dopDbPg.OptionsSt{
+		Dsn: conf.PgDsn,
+	})
 	if err != nil {
 		app.lg.Fatal(err)
 	}
 
-	app.core = core.New(app.lg, app.db, viper.GetString("fcm_server_key"))
+	app.repo = pg.New(app.db, app.lg)
 
-	app.httpApi = httpapi.New(app.lg, app.core, viper.GetString("usr_auth_url"), viper.GetString("http_listen"))
+	app.core = core.New(app.lg, app.repo)
 
-	app.lg.Infow("Starting", "http_listen", viper.GetString("http_listen"))
+	docs.SwaggerInfo.Host = conf.SwagHost
+	docs.SwaggerInfo.BasePath = conf.SwagBasePath
+	docs.SwaggerInfo.Schemes = []string{conf.SwagSchema}
+	docs.SwaggerInfo.Title = "Push service"
 
-	app.httpApi.Start()
+	// START
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	app.lg.Infow("Starting")
+
+	app.restApiSrv = dopServerHttps.Start(
+		conf.HttpListen,
+		rest.GetHandler(
+			app.lg,
+			app.core,
+			conf.HttpCors,
+		),
+		app.lg,
+	)
 
 	var exitCode int
 
 	select {
-	case <-stop:
-	case <-app.httpApi.Wait():
+	case <-dopTools.StopSignal():
+	case <-app.restApiSrv.Wait():
 		exitCode = 1
 	}
+
+	// STOP
 
 	app.lg.Infow("Shutting down...")
 
-	ctx, ctxCancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer ctxCancel()
-
-	err = app.httpApi.Shutdown(ctx)
-	if err != nil {
-		app.lg.Errorw("Fail to shutdown httpapi-api", err)
+	if !app.restApiSrv.Shutdown(20 * time.Second) {
 		exitCode = 1
 	}
 
+	app.lg.Infow("Exit")
+
 	os.Exit(exitCode)
-}
-
-func loadConf() {
-	viper.SetDefault("debug", "false")
-	viper.SetDefault("http_listen", ":80")
-	viper.SetDefault("log_level", "debug")
-
-	confFilePath := os.Getenv("CONF_PATH")
-	if confFilePath == "" {
-		confFilePath = "conf.yml"
-	}
-	viper.SetConfigFile(confFilePath)
-	_ = viper.ReadInConfig()
-
-	viper.AutomaticEnv()
 }

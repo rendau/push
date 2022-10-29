@@ -1,73 +1,12 @@
 package core
 
-import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"errors"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-	"time"
-
-	"github.com/rendau/push/internal/constants"
-	"github.com/rendau/push/internal/domain/entities"
-	"github.com/rendau/push/internal/errs"
-)
-
+/*
 const requestRetryCount = 2
 const requestRetryInterval = 3 * time.Second
 
 var (
 	httpClient = &http.Client{Timeout: 20 * time.Second}
 )
-
-func (c *St) TokenCreate(ctx context.Context, st *entities.TokenCreateSt) error {
-	var err error
-
-	ses := c.ContextGetSession(ctx)
-	if err = c.SesRequireAuth(ses); err != nil {
-		return err
-	}
-
-	st.Id = ses.Id
-
-	// validation
-	if st.Token == "" {
-		c.lg.Errorw("Token must not be empty", errs.BadToken)
-		return errs.BadToken
-	}
-	if st.PlatformId != constants.PlatformIOS && st.PlatformId != constants.PlatformAndroid && st.PlatformId != constants.PlatformWeb {
-		c.lg.Errorw("Not correct platform", errs.NotCorrectPlatform)
-		return errs.NotCorrectPlatform
-	}
-
-	err = c.db.CreateToken(st)
-	if err != nil {
-		c.lg.Errorw("Can not create token", err)
-		return errs.ServerNA
-	}
-
-	return nil
-}
-
-func (c *St) TokenDestroy(token string) error {
-	var err error
-
-	// validation
-	if token == "" {
-		c.lg.Errorw("Token must not be empty", errs.BadToken)
-		return errs.BadToken
-	}
-
-	err = c.db.DeleteToken(token)
-	if err != nil {
-		c.lg.Errorw("Can not delete token", err)
-		return errs.ServerNA
-	}
-
-	return nil
-}
 
 func (c *St) Send(reqSt *entities.SendReqSt) error {
 	var err error
@@ -78,22 +17,22 @@ func (c *St) Send(reqSt *entities.SendReqSt) error {
 		return errs.BadUserIds
 	}
 
-	err = c.sendToPlatform(constants.PlatformUndefined, reqSt)
+	err = c.sendToPlatform(cns.PlatformUndefined, reqSt)
 	if err != nil {
 		return err
 	}
 
-	err = c.sendToPlatform(constants.PlatformIOS, reqSt)
+	err = c.sendToPlatform(cns.PlatformIOS, reqSt)
 	if err != nil {
 		return err
 	}
 
-	err = c.sendToPlatform(constants.PlatformAndroid, reqSt)
+	err = c.sendToPlatform(cns.PlatformAndroid, reqSt)
 	if err != nil {
 		return err
 	}
 
-	err = c.sendToPlatform(constants.PlatformWeb, reqSt)
+	err = c.sendToPlatform(cns.PlatformWeb, reqSt)
 	if err != nil {
 		return err
 	}
@@ -104,9 +43,9 @@ func (c *St) Send(reqSt *entities.SendReqSt) error {
 func (c *St) sendToPlatform(platformId int, reqSt *entities.SendReqSt) error {
 	var err error
 
-	tokens, err := c.db.GetTokens(platformId, reqSt.UsrIds)
+	tokens, err := c.repo.GetTokens(platformId, reqSt.UsrIds)
 	if err != nil {
-		c.lg.Errorw("Cant get tokens from db", err)
+		c.lg.Errorw("Cant get tokens from repo", err)
 		return errs.ServerNA
 	}
 
@@ -145,7 +84,7 @@ func (c *St) sendChunk(platformId int, tokens []string, reqSt *entities.SendReqS
 	var msg interface{}
 
 	switch platformId {
-	case constants.PlatformUndefined:
+	case cns.PlatformUndefined:
 		msg = entities.UndefinedMessageSt{
 			CommonMessageSt: commonMessage,
 			Notification: &entities.UndefinedNotificationSt{
@@ -155,7 +94,7 @@ func (c *St) sendChunk(platformId int, tokens []string, reqSt *entities.SendReqS
 				ClickAction:          "FCM_PLUGIN_ACTIVITY",
 			},
 		}
-	case constants.PlatformAndroid:
+	case cns.PlatformAndroid:
 		msg = entities.AndroidMessageSt{
 			CommonMessageSt: commonMessage,
 			Notification: &entities.AndroidNotificationSt{
@@ -165,7 +104,7 @@ func (c *St) sendChunk(platformId int, tokens []string, reqSt *entities.SendReqS
 				ClickAction:          "FCM_PLUGIN_ACTIVITY",
 			},
 		}
-	case constants.PlatformIOS:
+	case cns.PlatformIOS:
 		msg = entities.IosMessageSt{
 			CommonMessageSt: commonMessage,
 			Notification: &entities.IosNotificationSt{
@@ -174,7 +113,7 @@ func (c *St) sendChunk(platformId int, tokens []string, reqSt *entities.SendReqS
 				Badge:                strconv.Itoa(reqSt.Badge),
 			},
 		}
-	case constants.PlatformWeb:
+	case cns.PlatformWeb:
 		commonMessage.Data["_n_title"] = reqSt.Title
 		commonMessage.Data["_n_body"] = reqSt.Body
 
@@ -188,7 +127,7 @@ func (c *St) sendChunk(platformId int, tokens []string, reqSt *entities.SendReqS
 		return
 	}
 
-	if reqSt.Badge > 0 && platformId == constants.PlatformAndroid { // push without notification, just for badge
+	if reqSt.Badge > 0 && platformId == cns.PlatformAndroid { // push without notification, just for badge
 		badgeMsg := entities.AndroidMessageSt{
 			CommonMessageSt: commonMessage,
 		}
@@ -234,7 +173,7 @@ func (c *St) sendMsg(tokens []string, msg interface{}) error {
 			}
 		}
 		if len(badTokens) > 0 {
-			err = c.db.DeleteTokens(badTokens)
+			err = c.repo.DeleteTokens(badTokens)
 			if err != nil {
 				c.lg.Errorw("Cant delete bad tokens", err)
 				return err
@@ -251,7 +190,7 @@ func (c *St) sendMsg(tokens []string, msg interface{}) error {
 func (c *St) sendFcmReq(msgBytes []byte) (*entities.FcmReplySt, error) {
 	var err error
 
-	req, err := http.NewRequest("POST", constants.FcmSendUrl, bytes.NewBuffer(msgBytes))
+	req, err := http.NewRequest("POST", cns.FcmSendUrl, bytes.NewBuffer(msgBytes))
 	if err != nil {
 		c.lg.Errorw("Fail to create http-request", err)
 		return nil, err
@@ -284,13 +223,4 @@ func (c *St) sendFcmReq(msgBytes []byte) (*entities.FcmReplySt, error) {
 
 	return replyObj, nil
 }
-
-func (c *St) UsrDestroy(usrId int64) error {
-	err := c.db.DeleteUsr(usrId)
-	if err != nil {
-		c.lg.Errorw("Can not delete usr", err)
-		return errs.ServerNA
-	}
-
-	return nil
-}
+*/

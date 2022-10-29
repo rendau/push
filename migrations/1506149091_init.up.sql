@@ -1,16 +1,18 @@
-do $$
-begin
-  execute 'ALTER DATABASE ' || current_database() || ' SET timezone = ''UTC''';
-end;
+do
+$$
+    begin
+        execute 'ALTER DATABASE ' || current_database() || ' SET timezone = ''UTC''';
+    end;
 $$;
 
-create table usr_push_token (
-  value      varchar     not null,
-  usr_id     varchar     not null,
-  created_at timestamptz not null default now(),
-
-  constraint usr_push_token_pk primary key (value)
+create table token
+(
+    value       text     not null
+        primary key,
+    created_at  timestamptz not null default now(),
+    usr_id      bigint      not null,
+    platform_id smallint    not null default 0
 );
 
-create index usr_push_token_usr_id_idx
-  on usr_push_token (usr_id);
+create index token_usr_id_idx
+    on token (usr_id);

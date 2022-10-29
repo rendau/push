@@ -1,1 +1,1 @@
-drop table if exists usr_push_token cascade;
+drop table if exists token cascade;
