@@ -32,12 +32,16 @@ func (d *St) TokenList(ctx context.Context, pars *entities.TokenListParsSt) ([]*
 
 	// filter
 	if pars.Values != nil {
-		conds = append(conds, `t.value in (select * from unnest(${values} :: bigint[]))`)
+		conds = append(conds, `t.value in (select * from unnest(${values} :: text[]))`)
 		args["values"] = *pars.Values
 	}
 	if pars.UsrId != nil {
 		conds = append(conds, `t.usr_id = ${usr_id}`)
 		args["usr_id"] = *pars.UsrId
+	}
+	if pars.UsrIds != nil {
+		conds = append(conds, `t.usr_id in (select * from unnest(${usr_ids} :: bigint[]))`)
+		args["usr_ids"] = *pars.UsrIds
 	}
 	if pars.PlatformId != nil {
 		conds = append(conds, `t.platform_id = ${platform_id}`)

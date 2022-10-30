@@ -16,9 +16,10 @@ type TokenSt struct {
 type TokenListParsSt struct {
 	dopTypes.ListParams
 
-	Values     *[]int64 `json:"values" form:"values"`
-	UsrId      *int64   `json:"usr_id" form:"usr_id"`
-	PlatformId *int     `json:"platform_id" form:"platform_id"`
+	Values     *[]string `json:"values" form:"values"`
+	UsrId      *int64    `json:"usr_id" form:"usr_id"`
+	UsrIds     *[]int64  `json:"usr_ids" form:"usr_ids"`
+	PlatformId *int      `json:"platform_id" form:"platform_id"`
 }
 
 type TokenCUSt struct {

@@ -16,7 +16,7 @@ import (
 	"github.com/rendau/push/internal/domain/core"
 )
 
-func Execute() {
+func Start() {
 	var err error
 
 	app := struct {
@@ -43,21 +43,6 @@ func Execute() {
 	app.repo = pg.New(app.db, app.lg)
 
 	app.prv, err = fcm.New(app.lg, conf.FcmCredsPath)
-
-	err = app.prv.Send(&prv.SendReqSt{
-		Tokens: []string{"asdfasdfads"},
-		Title:  "Hello",
-		Body:   "world!",
-		Data: map[string]string{
-			"score": "850",
-			"time":  "2:45",
-		},
-		Badge:      2,
-		AndroidTag: "",
-	})
-	if err != nil {
-		app.lg.Fatal(err)
-	}
 
 	app.core = core.New(app.lg, app.repo, app.prv)
 

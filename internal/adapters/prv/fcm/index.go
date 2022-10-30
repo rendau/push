@@ -3,7 +3,6 @@ package fcm
 import (
 	"context"
 	"fmt"
-	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
@@ -44,115 +43,38 @@ func New(lg logger.Lite, credsPath string) (*St, error) {
 }
 
 func (o *St) Send(obj *prv.SendReqSt) error {
-	/*
-		type MulticastMessage struct {
-			Tokens       []string
-			Data         map[string]string
-			Notification *Notification
-			Android      *AndroidConfig
-			Webpush      *WebpushConfig
-			APNS         *APNSConfig
+	var err error
+
+	const chunkSize = 500
+
+	tokens := obj.Tokens
+	obj.Tokens = nil
+
+	l := len(tokens)
+	i := 0
+	for i < l {
+		if i+chunkSize >= l {
+			err = o.sendChunk(tokens[i:], obj)
+		} else {
+			err = o.sendChunk(tokens[i:], obj)
+		}
+		if err != nil {
+			return err
 		}
 
-		type Message struct {
-			Token        string            `json:"token,omitempty"`
-			Data         map[string]string `json:"data,omitempty"`
-			Notification *Notification     `json:"notification,omitempty"`
-			Android      *AndroidConfig    `json:"android,omitempty"`
-			Webpush      *WebpushConfig    `json:"webpush,omitempty"`
-			APNS         *APNSConfig       `json:"apns,omitempty"`
+		i += chunkSize
+	}
 
-			FCMOptions   *FCMOptions       `json:"fcm_options,omitempty"`
-			Topic        string            `json:"-"`
-			Condition    string            `json:"condition,omitempty"`
-		}
-	*/
+	return nil
+}
 
+func (o *St) sendChunk(tokens []string, obj *prv.SendReqSt) error {
 	message := &messaging.MulticastMessage{
-		Tokens: obj.Tokens,
+		Tokens: tokens,
 		Data:   obj.Data,
 		Notification: &messaging.Notification{
 			Title: obj.Title,
 			Body:  obj.Body,
-		},
-		Android: &messaging.AndroidConfig{
-			CollapseKey:           "",
-			Priority:              "",
-			TTL:                   nil,
-			RestrictedPackageName: "",
-			Data:                  nil,
-			Notification: &messaging.AndroidNotification{
-				Title:                 "",
-				Body:                  "",
-				Icon:                  "",
-				Color:                 "",
-				Sound:                 "",
-				Tag:                   "",
-				ClickAction:           "",
-				BodyLocKey:            "",
-				BodyLocArgs:           nil,
-				TitleLocKey:           "",
-				TitleLocArgs:          nil,
-				ChannelID:             "",
-				ImageURL:              "",
-				Ticker:                "",
-				Sticky:                false,
-				EventTimestamp:        &time.Time{},
-				LocalOnly:             false,
-				Priority:              0,
-				VibrateTimingMillis:   nil,
-				DefaultVibrateTimings: false,
-				DefaultSound:          false,
-				LightSettings: &messaging.LightSettings{
-					Color:                  "",
-					LightOnDurationMillis:  0,
-					LightOffDurationMillis: 0,
-				},
-				DefaultLightSettings: false,
-				Visibility:           0,
-				NotificationCount:    nil,
-			},
-			FCMOptions: &messaging.AndroidFCMOptions{
-				AnalyticsLabel: "",
-			},
-		},
-		APNS: &messaging.APNSConfig{
-			Headers: nil,
-			Payload: &messaging.APNSPayload{
-				Aps: &messaging.Aps{
-					AlertString: "",
-					Alert: &messaging.ApsAlert{
-						Title:           "",
-						SubTitle:        "",
-						Body:            "",
-						LocKey:          "",
-						LocArgs:         nil,
-						TitleLocKey:     "",
-						TitleLocArgs:    nil,
-						SubTitleLocKey:  "",
-						SubTitleLocArgs: nil,
-						ActionLocKey:    "",
-						LaunchImage:     "",
-					},
-					Badge: nil,
-					Sound: "",
-					CriticalSound: &messaging.CriticalSound{
-						Critical: false,
-						Name:     "",
-						Volume:   0,
-					},
-					ContentAvailable: false,
-					MutableContent:   false,
-					Category:         "",
-					ThreadID:         "",
-					CustomData:       nil,
-				},
-				CustomData: nil,
-			},
-			FCMOptions: &messaging.APNSFCMOptions{
-				AnalyticsLabel: "",
-				ImageURL:       "",
-			},
 		},
 	}
 

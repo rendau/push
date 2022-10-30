@@ -1,6 +1,7 @@
 package prv
 
 type SendReqSt struct {
+	PlatformId int
 	Tokens     []string
 	Title      string
 	Body       string
